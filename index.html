@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes">
+<title>청송 안효공파 감사공파 가계도</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fbfaf6;font-family:Arial,'Noto Sans KR',sans-serif;color:#171717}
+#bar{position:fixed;z-index:20;left:0;right:0;top:0;height:62px;background:#fff;border-bottom:1px solid #ddd;display:flex;align-items:center;gap:8px;padding:8px 10px;box-shadow:0 1px 5px #0001}
+#title{font-weight:700;white-space:nowrap}
+#q{width:150px;height:38px;border:1px solid #bbb;border-radius:8px;padding:0 10px;font-size:17px}
+button{height:38px;border:1px solid #bbb;background:#fff;border-radius:8px;padding:0 12px;font-size:16px}
+#view{position:absolute;top:62px;left:0;right:0;bottom:0;overflow:auto;touch-action:pan-x pan-y;background:#fbfaf6}
+#world{position:relative;transform-origin:0 0}
+svg{position:absolute;left:0;top:0;overflow:visible;z-index:1}
+.line{stroke:#3f3f3f;stroke-width:2;fill:none;vector-effect:non-scaling-stroke}
+.box{z-index:2;position:absolute;width:166px;height:46px;border:1.4px solid #333;border-radius:7px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;white-space:nowrap;box-shadow:0 1px 2px #0001}
+.box.f{background:#fffdfa}
+.box.hit{background:#ffd54f!important;outline:4px solid #d99a00;z-index:6}
+.box.dim{opacity:.16}
+.box.trace{opacity:1;background:#fff2a8;outline:3px solid #e2a51b;z-index:5}
+.line.dim{opacity:.10}
+.line.traceLine{opacity:1;stroke:#d62828;stroke-width:5}
+.gen{position:absolute;left:18px;width:70px;text-align:center;font-weight:800;color:#555;font-size:17px;border-bottom:1px solid #ddd;padding-bottom:3px}
+#note{margin-left:auto;font-size:12px;color:#777;white-space:nowrap}
+@media(max-width:700px){#title{display:none}#note{display:none}#q{width:130px}button{padding:0 9px}}
+</style>
+</head>
+<body>
+<div id="bar">
+ <div id="title">청송 안효공파 감사공파</div>
+ <input id="q" placeholder="이름 검색">
+ <button onclick="findName()">검색</button>
+ <button onclick="traceAncestors()">조상추적</button>
+ <button onclick="traceDescendants()">자손추적</button>
+ <button onclick="clearTrace()">추적해제</button>
+ <button onclick="zoomBy(1.2)">＋</button>
+ <button onclick="zoomBy(0.83)">－</button>
+ <button onclick="fitAll()">전체보기</button>
+ <div id="note">이름을 터치하면 조상 계보선 표시</div>
+</div>
+<div id="view"><div id="world"><svg id="svg"></svg></div></div>
+<script>
+const N=[{"id": "K3", "name": "심홍부", "col": 10, "row": 3, "x": 1070, "y": 90}, {"id": "K5", "name": "(子) 연", "col": 10, "row": 5, "x": 1070, "y": 230}, {"id": "M5", "name": "(子) 성", "col": 12, "row": 5, "x": 1260, "y": 230}, {"id": "K7", "name": "(子) 용", "col": 10, "row": 7, "x": 1070, "y": 370}, {"id": "M7", "name": "(女) 민안부", "col": 12, "row": 7, "x": 1260, "y": 370}, {"id": "K9", "name": "(子) 덕부", "col": 10, "row": 9, "x": 1070, "y": 510}, {"id": "M9", "name": "(子) 원부", "col": 12, "row": 9, "x": 1260, "y": 510}, {"id": "C11", "name": "(子) 인봉", "col": 2, "row": 11, "x": 310, "y": 650}, {"id": "E11", "name": "(子) 의구", "col": 4, "row": 11, "x": 500, "y": 650}, {"id": "G11", "name": "(子) 계년", "col": 6, "row": 11, "x": 690, "y": 650}, {"id": "I11", "name": "(子) 정", "col": 8, "row": 11, "x": 880, "y": 650}, {"id": "K11", "name": "(子) 온", "col": 10, "row": 11, "x": 1070, "y": 650}, {"id": "M11", "name": "(子) 종", "col": 12, "row": 11, "x": 1260, "y": 650}, {"id": "O11", "name": "(子) 정", "col": 14, "row": 11, "x": 1450, "y": 650}, {"id": "K13", "name": "(子) 준", "col": 10, "row": 13, "x": 1070, "y": 790}, {"id": "M13", "name": "(子) 회", "col": 12, "row": 13, "x": 1260, "y": 790}, {"id": "O13", "name": "(子) 결", "col": 14, "row": 13, "x": 1450, "y": 790}, {"id": "Q13", "name": "(女)oooo", "col": 16, "row": 13, "x": 1640, "y": 790}, {"id": "S13", "name": "(女) 강석덕", "col": 18, "row": 13, "x": 1830, "y": 790}, {"id": "U13", "name": "(女) 노물재", "col": 20, "row": 13, "x": 2020, "y": 790}, {"id": "W13", "name": "(女) 유자해", "col": 22, "row": 13, "x": 2210, "y": 790}, {"id": "Y13", "name": "(女) 이숭지", "col": 24, "row": 13, "x": 2400, "y": 790}, {"id": "AA13", "name": "(女) 박거소", "col": 26, "row": 13, "x": 2590, "y": 790}, {"id": "AC13", "name": "(子) 장수", "col": 28, "row": 13, "x": 2780, "y": 790}, {"id": "AE13", "name": "(子) 장기", "col": 30, "row": 13, "x": 2970, "y": 790}, {"id": "I15", "name": "(子) 미", "col": 8, "row": 15, "x": 880, "y": 930}, {"id": "K15", "name": "(子) 치", "col": 10, "row": 15, "x": 1070, "y": 930}, {"id": "M15", "name": "(子) 수", "col": 12, "row": 15, "x": 1260, "y": 930}, {"id": "O15", "name": "(子) 단", "col": 14, "row": 15, "x": 1450, "y": 930}, {"id": "K17", "name": "(子) 형", "col": 10, "row": 17, "x": 1070, "y": 1070}, {"id": "K19", "name": "(子) 달원", "col": 10, "row": 19, "x": 1070, "y": 1210}, {"id": "G21", "name": "(子) 진", "col": 6, "row": 21, "x": 690, "y": 1350}, {"id": "I21", "name": "(子) 자", "col": 8, "row": 21, "x": 880, "y": 1350}, {"id": "K21", "name": "(子) 전", "col": 10, "row": 21, "x": 1070, "y": 1350}, {"id": "M21", "name": "(子) 수", "col": 12, "row": 21, "x": 1260, "y": 1350}, {"id": "O21", "name": "(女) 황양군수", "col": 14, "row": 21, "x": 1450, "y": 1350}, {"id": "G23", "name": "(子) 우선", "col": 6, "row": 23, "x": 690, "y": 1490}, {"id": "I23", "name": "(子) 우준", "col": 8, "row": 23, "x": 880, "y": 1490}, {"id": "K23", "name": "(子) 우승", "col": 10, "row": 23, "x": 1070, "y": 1490}, {"id": "M23", "name": "(子) 우단", "col": 12, "row": 23, "x": 1260, "y": 1490}, {"id": "O23", "name": "(女) 김광두", "col": 14, "row": 23, "x": 1450, "y": 1490}, {"id": "Q23", "name": "(女) 정문기", "col": 16, "row": 23, "x": 1640, "y": 1490}, {"id": "S23", "name": "(女) 김대섭", "col": 18, "row": 23, "x": 1830, "y": 1490}, {"id": "U23", "name": "(女) 이담", "col": 20, "row": 23, "x": 2020, "y": 1490}, {"id": "W23", "name": "(女) 신득중", "col": 22, "row": 23, "x": 2210, "y": 1490}, {"id": "Y23", "name": "(女) 정기원", "col": 24, "row": 23, "x": 2400, "y": 1490}, {"id": "AA23", "name": "(子) 우삼", "col": 26, "row": 23, "x": 2590, "y": 1490}, {"id": "AC23", "name": "(子)  우덕", "col": 28, "row": 23, "x": 2780, "y": 1490}, {"id": "AE23", "name": "(子) 우민", "col": 30, "row": 23, "x": 2970, "y": 1490}, {"id": "AG23", "name": "(子) 우영", "col": 32, "row": 23, "x": 3160, "y": 1490}, {"id": "AI23", "name": "(女) 한진", "col": 34, "row": 23, "x": 3350, "y": 1490}, {"id": "K25", "name": "(子) 액", "col": 10, "row": 25, "x": 1070, "y": 1630}, {"id": "M25", "name": "(子) 보", "col": 12, "row": 25, "x": 1260, "y": 1630}, {"id": "O25", "name": "(女) 양홍", "col": 14, "row": 25, "x": 1450, "y": 1630}, {"id": "I27", "name": "(子) 광수", "col": 8, "row": 27, "x": 880, "y": 1770}, {"id": "K27", "name": "(子) 광사", "col": 10, "row": 27, "x": 1070, "y": 1770}, {"id": "M27", "name": "(女) 허빈", "col": 12, "row": 27, "x": 1260, "y": 1770}, {"id": "O27", "name": "(女) 오단", "col": 14, "row": 27, "x": 1450, "y": 1770}, {"id": "Q27", "name": "(女) 안천건", "col": 16, "row": 27, "x": 1640, "y": 1770}, {"id": "S27", "name": "(女) 류명", "col": 18, "row": 27, "x": 1830, "y": 1770}, {"id": "U27", "name": "(女) 이암", "col": 20, "row": 27, "x": 2020, "y": 1770}, {"id": "E29", "name": "(子) 장", "col": 4, "row": 29, "x": 500, "y": 1910}, {"id": "G29", "name": "(子) 백", "col": 6, "row": 29, "x": 690, "y": 1910}, {"id": "I29", "name": "(子) 상", "col": 8, "row": 29, "x": 880, "y": 1910}, {"id": "K29", "name": "(子) 벌", "col": 10, "row": 29, "x": 1070, "y": 1910}, {"id": "M29", "name": "(子) 숙", "col": 12, "row": 29, "x": 1260, "y": 1910}, {"id": "O29", "name": "(子) 황", "col": 14, "row": 29, "x": 1450, "y": 1910}, {"id": "Q29", "name": "(子) 탱", "col": 16, "row": 29, "x": 1640, "y": 1910}, {"id": "S29", "name": "(女) 이명구", "col": 18, "row": 29, "x": 1830, "y": 1910}, {"id": "U29", "name": "(女) 윤이석", "col": 20, "row": 29, "x": 2020, "y": 1910}, {"id": "W29", "name": "(女) 홍만기", "col": 22, "row": 29, "x": 2210, "y": 1910}, {"id": "Y29", "name": "(女) 신회", "col": 24, "row": 29, "x": 2400, "y": 1910}, {"id": "G31", "name": "(子) 득일", "col": 6, "row": 31, "x": 690, "y": 2050}, {"id": "I31", "name": "(子) 득삼", "col": 8, "row": 31, "x": 880, "y": 2050}, {"id": "K31", "name": "(子) 득만", "col": 10, "row": 31, "x": 1070, "y": 2050}, {"id": "M31", "name": "(子) 득구", "col": 12, "row": 31, "x": 1260, "y": 2050}, {"id": "O31", "name": "(子) 득겸", "col": 14, "row": 31, "x": 1450, "y": 2050}, {"id": "Q31", "name": "(女) 이도원", "col": 16, "row": 31, "x": 1640, "y": 2050}, {"id": "S31", "name": "(女) 홍상보", "col": 18, "row": 31, "x": 1830, "y": 2050}, {"id": "U31", "name": "(女) 이제욱", "col": 20, "row": 31, "x": 2020, "y": 2050}, {"id": "W31", "name": "(女) 성윤장", "col": 22, "row": 31, "x": 2210, "y": 2050}, {"id": "Y31", "name": "(女) 권세동", "col": 24, "row": 31, "x": 2400, "y": 2050}, {"id": "K33", "name": "(子) 완", "col": 10, "row": 33, "x": 1070, "y": 2190}, {"id": "M33", "name": "(子) 우", "col": 12, "row": 33, "x": 1260, "y": 2190}, {"id": "K35", "name": "(子) 순석", "col": 10, "row": 35, "x": 1070, "y": 2330}, {"id": "M35", "name": "(子) 문석", "col": 12, "row": 35, "x": 1260, "y": 2330}, {"id": "O35", "name": "(子) 붕석", "col": 14, "row": 35, "x": 1450, "y": 2330}, {"id": "K37", "name": "(子) 속", "col": 10, "row": 37, "x": 1070, "y": 2470}, {"id": "M37", "name": "(女) 홍련", "col": 12, "row": 37, "x": 1260, "y": 2470}, {"id": "O37", "name": "(女) 권성", "col": 14, "row": 37, "x": 1450, "y": 2470}, {"id": "Q37", "name": "(女) 송효목", "col": 16, "row": 37, "x": 1640, "y": 2470}, {"id": "S37", "name": "(女) 한영일", "col": 18, "row": 37, "x": 1830, "y": 2470}, {"id": "K39", "name": "(子) 동규", "col": 10, "row": 39, "x": 1070, "y": 2610}, {"id": "M39", "name": "(子) 동익", "col": 12, "row": 39, "x": 1260, "y": 2610}, {"id": "O39", "name": "(女) 홍기열", "col": 14, "row": 39, "x": 1450, "y": 2610}, {"id": "K41", "name": "(子) 인경", "col": 10, "row": 41, "x": 1070, "y": 2750}, {"id": "M41", "name": "(女) 윤병훈", "col": 12, "row": 41, "x": 1260, "y": 2750}, {"id": "O41", "name": "(女) 권정전", "col": 14, "row": 41, "x": 1450, "y": 2750}, {"id": "Q41", "name": "(女) 채갑영", "col": 16, "row": 41, "x": 1640, "y": 2750}, {"id": "K43", "name": "(子) 재수", "col": 10, "row": 43, "x": 1070, "y": 2890}, {"id": "M43", "name": "(女) 이현식", "col": 12, "row": 43, "x": 1260, "y": 2890}, {"id": "K45", "name": "(子) 봉진", "col": 10, "row": 45, "x": 1070, "y": 3030}, {"id": "FE45", "name": "(子) 학진", "col": 160, "row": 45, "x": 15320, "y": 3030}, {"id": "K47", "name": "(子) 언하", "col": 10, "row": 47, "x": 1070, "y": 3170}, {"id": "CA47", "name": "(子) 언상", "col": 78, "row": 47, "x": 7530, "y": 3170}, {"id": "CY47", "name": "(子) 언한", "col": 102, "row": 47, "x": 9810, "y": 3170}, {"id": "DU47", "name": "(子) 언관", "col": 124, "row": 47, "x": 11900, "y": 3170}, {"id": "EO47", "name": "(子) 언명", "col": 144, "row": 47, "x": 13800, "y": 3170}, {"id": "FC47", "name": "(女) 한명우", "col": 158, "row": 47, "x": 15130, "y": 3170}, {"id": "FE47", "name": "(子) 언태", "col": 160, "row": 47, "x": 15320, "y": 3170}, {"id": "FW47", "name": "(子) 언숭", "col": 178, "row": 47, "x": 17030, "y": 3170}, {"id": "GG47", "name": "(子) 언형", "col": 188, "row": 47, "x": 17980, "y": 3170}, {"id": "K49", "name": "(子) 종근", "col": 10, "row": 49, "x": 1070, "y": 3310}, {"id": "AQ49", "name": "(子) 영근", "col": 42, "row": 49, "x": 4110, "y": 3310}, {"id": "BQ49", "name": "(子) 성근", "col": 68, "row": 49, "x": 6580, "y": 3310}, {"id": "CA49", "name": "(子) 준근", "col": 78, "row": 49, "x": 7530, "y": 3310}, {"id": "CO49", "name": "(女) 초근", "col": 92, "row": 49, "x": 8860, "y": 3310}, {"id": "CQ49", "name": "(女) 이근", "col": 94, "row": 49, "x": 9050, "y": 3310}, {"id": "CS49", "name": "(女) 삼근", "col": 96, "row": 49, "x": 9240, "y": 3310}, {"id": "CU49", "name": "(女) 사근", "col": 98, "row": 49, "x": 9430, "y": 3310}, {"id": "CW49", "name": "(女) 순근", "col": 100, "row": 49, "x": 9620, "y": 3310}, {"id": "CY49", "name": "(子) 원근", "col": 102, "row": 49, "x": 9810, "y": 3310}, {"id": "DM49", "name": "(子) 면근", "col": 116, "row": 49, "x": 11140, "y": 3310}, {"id": "DO49", "name": "(子) 만근", "col": 118, "row": 49, "x": 11330, "y": 3310}, {"id": "DQ49", "name": "(女) 윤욱용", "col": 120, "row": 49, "x": 11520, "y": 3310}, {"id": "DS49", "name": "(女) 안현수", "col": 122, "row": 49, "x": 11710, "y": 3310}, {"id": "DU49", "name": "(子) 만근", "col": 124, "row": 49, "x": 11900, "y": 3310}, {"id": "EO49", "name": "(子) 충근", "col": 144, "row": 49, "x": 13800, "y": 3310}, {"id": "EQ49", "name": "(子) 효근", "col": 146, "row": 49, "x": 13990, "y": 3310}, {"id": "FA49", "name": "(子) 제근", "col": 156, "row": 49, "x": 14940, "y": 3310}, {"id": "FE49", "name": "(子) 철근", "col": 160, "row": 49, "x": 15320, "y": 3310}, {"id": "FW49", "name": "(子) 철근", "col": 178, "row": 49, "x": 17030, "y": 3310}, {"id": "FY49", "name": "(子) 세근", "col": 180, "row": 49, "x": 17220, "y": 3310}, {"id": "GC49", "name": "(女) 평근", "col": 184, "row": 49, "x": 17600, "y": 3310}, {"id": "GE49", "name": "(女) 남근", "col": 186, "row": 49, "x": 17790, "y": 3310}, {"id": "GG49", "name": "(子) 경근", "col": 188, "row": 49, "x": 17980, "y": 3310}, {"id": "GQ49", "name": "(子) 창근", "col": 198, "row": 49, "x": 18930, "y": 3310}, {"id": "HA49", "name": "(子) 상근", "col": 208, "row": 49, "x": 19880, "y": 3310}, {"id": "HE49", "name": "(女) 윤근", "col": 212, "row": 49, "x": 20260, "y": 3310}, {"id": "HG49", "name": "(女) 근순", "col": 214, "row": 49, "x": 20450, "y": 3310}, {"id": "HI49", "name": "(女) 연근", "col": 216, "row": 49, "x": 20640, "y": 3310}, {"id": "HK49", "name": "(女) 현근", "col": 218, "row": 49, "x": 20830, "y": 3310}, {"id": "K51", "name": "(子) 응식", "col": 10, "row": 51, "x": 1070, "y": 3450}, {"id": "W51", "name": "(子) 응철", "col": 22, "row": 51, "x": 2210, "y": 3450}, {"id": "AA51", "name": "(子) 응윤", "col": 26, "row": 51, "x": 2590, "y": 3450}, {"id": "AC51", "name": "(子) 응규", "col": 28, "row": 51, "x": 2780, "y": 3450}, {"id": "AG51", "name": "(女) 영희", "col": 32, "row": 51, "x": 3160, "y": 3450}, {"id": "AI51", "name": "(女) 정자", "col": 34, "row": 51, "x": 3350, "y": 3450}, {"id": "AK51", "name": "(女) 응숙", "col": 36, "row": 51, "x": 3540, "y": 3450}, {"id": "AM51", "name": "(女) 향숙", "col": 38, "row": 51, "x": 3730, "y": 3450}, {"id": "AO51", "name": "(女) 영숙", "col": 40, "row": 51, "x": 3920, "y": 3450}, {"id": "AQ51", "name": "(子) 응복", "col": 42, "row": 51, "x": 4110, "y": 3450}, {"id": "BA51", "name": "(子) 응조", "col": 52, "row": 51, "x": 5060, "y": 3450}, {"id": "BG51", "name": "(子) 응록", "col": 58, "row": 51, "x": 5630, "y": 3450}, {"id": "BK51", "name": "(子) 응우", "col": 62, "row": 51, "x": 6010, "y": 3450}, {"id": "BM51", "name": "(女) 혜자", "col": 64, "row": 51, "x": 6200, "y": 3450}, {"id": "BO51", "name": "(女) 응희", "col": 66, "row": 51, "x": 6390, "y": 3450}, {"id": "BQ51", "name": "(子) 응일", "col": 68, "row": 51, "x": 6580, "y": 3450}, {"id": "BU51", "name": "(子) 응만", "col": 72, "row": 51, "x": 6960, "y": 3450}, {"id": "BY51", "name": "(女) 효순", "col": 76, "row": 51, "x": 7340, "y": 3450}, {"id": "CA51", "name": "(子) 응춘", "col": 78, "row": 51, "x": 7530, "y": 3450}, {"id": "CG51", "name": "(女) 명희", "col": 84, "row": 51, "x": 8100, "y": 3450}, {"id": "CI51", "name": "(女) 명순", "col": 86, "row": 51, "x": 8290, "y": 3450}, {"id": "CK51", "name": "(女) 명옥", "col": 88, "row": 51, "x": 8480, "y": 3450}, {"id": "CM51", "name": "(女) 명란", "col": 90, "row": 51, "x": 8670, "y": 3450}, {"id": "CY51", "name": "(子) 응렬", "col": 102, "row": 51, "x": 9810, "y": 3450}, {"id": "DC51", "name": "(子) 응재", "col": 106, "row": 51, "x": 10190, "y": 3450}, {"id": "DG51", "name": "(女) 수자", "col": 110, "row": 51, "x": 10570, "y": 3450}, {"id": "DI51", "name": "(女) 영숙", "col": 112, "row": 51, "x": 10760, "y": 3450}, {"id": "DK51", "name": "(女) 정숙", "col": 114, "row": 51, "x": 10950, "y": 3450}, {"id": "DM51", "name": "(女) 명숙", "col": 116, "row": 51, "x": 11140, "y": 3450}, {"id": "DU51", "name": "(子) 응룡", "col": 124, "row": 51, "x": 11900, "y": 3450}, {"id": "DY51", "name": "(子) 응천", "col": 128, "row": 51, "x": 12280, "y": 3450}, {"id": "EC51", "name": "(子) 응연", "col": 132, "row": 51, "x": 12660, "y": 3450}, {"id": "EE51", "name": "(子) 응택", "col": 134, "row": 51, "x": 12850, "y": 3450}, {"id": "EI51", "name": "(子) 응석", "col": 138, "row": 51, "x": 13230, "y": 3450}, {"id": "EM51", "name": "(女) 옥순", "col": 142, "row": 51, "x": 13610, "y": 3450}, {"id": "EO51", "name": "(女) 응경", "col": 144, "row": 51, "x": 13800, "y": 3450}, {"id": "EQ51", "name": "(子) 응선", "col": 146, "row": 51, "x": 13990, "y": 3450}, {"id": "EU51", "name": "(子) 응찬", "col": 150, "row": 51, "x": 14370, "y": 3450}, {"id": "EW51", "name": "(子) 응석", "col": 152, "row": 51, "x": 14560, "y": 3450}, {"id": "FE51", "name": "(子) 응모", "col": 160, "row": 51, "x": 15320, "y": 3450}, {"id": "FI51", "name": "(子) 응범", "col": 164, "row": 51, "x": 15700, "y": 3450}, {"id": "FM51", "name": "(子) 응길", "col": 168, "row": 51, "x": 16080, "y": 3450}, {"id": "FO51", "name": "(女) 난숙", "col": 170, "row": 51, "x": 16270, "y": 3450}, {"id": "FQ51", "name": "(女) 경숙", "col": 172, "row": 51, "x": 16460, "y": 3450}, {"id": "FS51", "name": "(女) 예숙", "col": 174, "row": 51, "x": 16650, "y": 3450}, {"id": "FU51", "name": "(女) 이숙", "col": 176, "row": 51, "x": 16840, "y": 3450}, {"id": "FY51", "name": "(子) 응돈", "col": 180, "row": 51, "x": 17220, "y": 3450}, {"id": "GA51", "name": "(女) 창숙", "col": 182, "row": 51, "x": 17410, "y": 3450}, {"id": "GG51", "name": "(子) 응호", "col": 188, "row": 51, "x": 17980, "y": 3450}, {"id": "GK51", "name": "(子) 응각", "col": 192, "row": 51, "x": 18360, "y": 3450}, {"id": "GM51", "name": "(子) 응구", "col": 194, "row": 51, "x": 18550, "y": 3450}, {"id": "GO51", "name": "(子) 응덕", "col": 196, "row": 51, "x": 18740, "y": 3450}, {"id": "GQ51", "name": "(子) 응남", "col": 198, "row": 51, "x": 18930, "y": 3450}, {"id": "GU51", "name": "(子) 응묵", "col": 202, "row": 51, "x": 19310, "y": 3450}, {"id": "GW51", "name": "(子) 응필", "col": 204, "row": 51, "x": 19500, "y": 3450}, {"id": "GY51", "name": "(女) 옥자", "col": 206, "row": 51, "x": 19690, "y": 3450}, {"id": "HA51", "name": "(子) 응준", "col": 208, "row": 51, "x": 19880, "y": 3450}, {"id": "HC51", "name": "(子) 응권", "col": 210, "row": 51, "x": 20070, "y": 3450}, {"id": "K53", "name": "(子) 민용", "col": 10, "row": 53, "x": 1070, "y": 3590}, {"id": "Q53", "name": "(子) 경용", "col": 16, "row": 53, "x": 1640, "y": 3590}, {"id": "S53", "name": "(女) 혜경", "col": 18, "row": 53, "x": 1830, "y": 3590}, {"id": "U53", "name": "(女) 혜진", "col": 20, "row": 53, "x": 2020, "y": 3590}, {"id": "W53", "name": "(子) 광용", "col": 22, "row": 53, "x": 2210, "y": 3590}, {"id": "Y53", "name": "(女) 수경", "col": 24, "row": 53, "x": 2400, "y": 3590}, {"id": "AA53", "name": "(子) 우용", "col": 26, "row": 53, "x": 2590, "y": 3590}, {"id": "AC53", "name": "(子) 승용", "col": 28, "row": 53, "x": 2780, "y": 3590}, {"id": "AE53", "name": "(女) 현수", "col": 30, "row": 53, "x": 2970, "y": 3590}, {"id": "AQ53", "name": "(子) 창용", "col": 42, "row": 53, "x": 4110, "y": 3590}, {"id": "AU53", "name": "(子) 길용", "col": 46, "row": 53, "x": 4490, "y": 3590}, {"id": "AY53", "name": "(女) 현주", "col": 50, "row": 53, "x": 4870, "y": 3590}, {"id": "BA53", "name": "(子) 주용", "col": 52, "row": 53, "x": 5060, "y": 3590}, {"id": "BE53", "name": "(女) 현숙", "col": 56, "row": 53, "x": 5440, "y": 3590}, {"id": "BG53", "name": "(子) 진용", "col": 58, "row": 53, "x": 5630, "y": 3590}, {"id": "BI53", "name": "(女) 진아", "col": 60, "row": 53, "x": 5820, "y": 3590}, {"id": "BK53", "name": "(女) 지혜", "col": 62, "row": 53, "x": 6010, "y": 3590}, {"id": "BQ53", "name": "(子) 민국", "col": 68, "row": 53, "x": 6580, "y": 3590}, {"id": "BS53", "name": "(女) 현윤", "col": 70, "row": 53, "x": 6770, "y": 3590}, {"id": "BU53", "name": "(女) 윤진", "col": 72, "row": 53, "x": 6960, "y": 3590}, {"id": "BW53", "name": "(女) 유현", "col": 74, "row": 53, "x": 7150, "y": 3590}, {"id": "CA53", "name": "(子) 관용", "col": 78, "row": 53, "x": 7530, "y": 3590}, {"id": "CC53", "name": "(女) 혜림", "col": 80, "row": 53, "x": 7720, "y": 3590}, {"id": "CE53", "name": "(女) 진선", "col": 82, "row": 53, "x": 7910, "y": 3590}, {"id": "CY53", "name": "(子) 잔용", "col": 102, "row": 53, "x": 9810, "y": 3590}, {"id": "DA53", "name": "(子) 운형", "col": 104, "row": 53, "x": 10000, "y": 3590}, {"id": "DC53", "name": "(子) 준영", "col": 106, "row": 53, "x": 10190, "y": 3590}, {"id": "DE53", "name": "(女) 지우", "col": 108, "row": 53, "x": 10380, "y": 3590}, {"id": "DU53", "name": "(子) 정훈", "col": 124, "row": 53, "x": 11900, "y": 3590}, {"id": "DW53", "name": "(女) 정미", "col": 126, "row": 53, "x": 12090, "y": 3590}, {"id": "DY53", "name": "(女) 영미", "col": 128, "row": 53, "x": 12280, "y": 3590}, {"id": "EA53", "name": "(女) 순미", "col": 130, "row": 53, "x": 12470, "y": 3590}, {"id": "EC53", "name": "(子) 재용", "col": 132, "row": 53, "x": 12660, "y": 3590}, {"id": "EE53", "name": "(子) 지훈", "col": 134, "row": 53, "x": 12850, "y": 3590}, {"id": "EG53", "name": "(女) 가영", "col": 136, "row": 53, "x": 13040, "y": 3590}, {"id": "EI53", "name": "(子) 재훈", "col": 138, "row": 53, "x": 13230, "y": 3590}, {"id": "EK53", "name": "(女) 현정", "col": 140, "row": 53, "x": 13420, "y": 3590}, {"id": "EQ53", "name": "(子) 준용", "col": 146, "row": 53, "x": 13990, "y": 3590}, {"id": "ES53", "name": "(女) 예슬", "col": 148, "row": 53, "x": 14180, "y": 3590}, {"id": "EU53", "name": "(子) 대용", "col": 150, "row": 53, "x": 14370, "y": 3590}, {"id": "EW53", "name": "(子) 재용", "col": 152, "row": 53, "x": 14560, "y": 3590}, {"id": "EY53", "name": "(女) 한슬", "col": 154, "row": 53, "x": 14750, "y": 3590}, {"id": "FE53", "name": "(女) 미영", "col": 160, "row": 53, "x": 15320, "y": 3590}, {"id": "FG53", "name": "(女) 서영", "col": 162, "row": 53, "x": 15510, "y": 3590}, {"id": "FI53", "name": "(子) 선용", "col": 164, "row": 53, "x": 15700, "y": 3590}, {"id": "FK53", "name": "(女) 진희", "col": 166, "row": 53, "x": 15890, "y": 3590}, {"id": "FM53", "name": "(子) 하용", "col": 168, "row": 53, "x": 16080, "y": 3590}, {"id": "GG53", "name": "(子) 성용", "col": 188, "row": 53, "x": 17980, "y": 3590}, {"id": "GI53", "name": "(子) 진용", "col": 190, "row": 53, "x": 18170, "y": 3590}, {"id": "GK53", "name": "(子) 선용", "col": 192, "row": 53, "x": 18360, "y": 3590}, {"id": "GM53", "name": "(女) 은정", "col": 194, "row": 53, "x": 18550, "y": 3590}, {"id": "GQ53", "name": "(子) 정훈", "col": 198, "row": 53, "x": 18930, "y": 3590}, {"id": "GS53", "name": "(女) 지연", "col": 200, "row": 53, "x": 19120, "y": 3590}, {"id": "GU53", "name": "(子) 창래", "col": 202, "row": 53, "x": 19310, "y": 3590}, {"id": "K55", "name": "(子) 현업", "col": 10, "row": 55, "x": 1070, "y": 3730}, {"id": "M55", "name": "(女) 현지", "col": 12, "row": 55, "x": 1260, "y": 3730}, {"id": "O55", "name": "(女) 현서", "col": 14, "row": 55, "x": 1450, "y": 3730}, {"id": "AQ55", "name": "(女) 현진", "col": 42, "row": 55, "x": 4110, "y": 3730}, {"id": "AS55", "name": "(子) 현민", "col": 44, "row": 55, "x": 4300, "y": 3730}, {"id": "AU55", "name": "(女) 혜원", "col": 46, "row": 55, "x": 4490, "y": 3730}, {"id": "AW55", "name": "(子) 현호", "col": 48, "row": 55, "x": 4680, "y": 3730}, {"id": "BA55", "name": "(子) 정훈", "col": 52, "row": 55, "x": 5060, "y": 3730}, {"id": "BC55", "name": "(子) 정민", "col": 54, "row": 55, "x": 5250, "y": 3730}], R=[["AA51", "AA53"], ["AC51", "AC53"], ["AC51", "AE53"], ["AQ49", "AQ51"], ["AQ49", "BA51"], ["AQ49", "BG51"], ["AQ49", "BK51"], ["AQ49", "BM51"], ["AQ49", "BO51"], ["AQ51", "AQ53"], ["AQ51", "AU53"], ["AQ51", "AY53"], ["AQ53", "AQ55"], ["AQ53", "AS55"], ["AU53", "AU55"], ["AU53", "AW55"], ["BA51", "BA53"], ["BA51", "BE53"], ["BA53", "BA55"], ["BA53", "BC55"], ["BG51", "BG53"], ["BG51", "BI53"], ["BK51", "BK53"], ["BQ49", "BQ51"], ["BQ49", "BU51"], ["BQ49", "BY51"], ["BQ51", "BQ53"], ["BQ51", "BS53"], ["BU51", "BU53"], ["BU51", "BW53"], ["CA47", "CA49"], ["CA47", "CO49"], ["CA47", "CQ49"], ["CA47", "CS49"], ["CA47", "CU49"], ["CA47", "CW49"], ["CA49", "CA51"], ["CA49", "CG51"], ["CA49", "CI51"], ["CA49", "CK51"], ["CA49", "CM51"], ["CA51", "CA53"], ["CA51", "CC53"], ["CA51", "CE53"], ["CY47", "CY49"], ["CY47", "DM49"], ["CY47", "DO49"], ["CY47", "DQ49"], ["CY47", "DS49"], ["CY49", "CY51"], ["CY49", "DC51"], ["CY49", "DG51"], ["CY49", "DI51"], ["CY49", "DK51"], ["CY51", "CY53"], ["CY51", "DA53"], ["DC51", "DC53"], ["DC51", "DE53"], ["DM49", "DM51"], ["DU47", "DU49"], ["DU49", "DU51"], ["DU49", "DY51"], ["DU49", "EC51"], ["DU49", "EE51"], ["DU49", "EI51"], ["DU49", "EM51"], ["DU51", "DU53"], ["DU51", "DW53"], ["DY51", "DY53"], ["DY51", "EA53"], ["EC51", "EC53"], ["EE51", "EE53"], ["EE51", "EG53"], ["EI51", "EI53"], ["EI51", "EK53"], ["EO47", "EO49"], ["EO47", "EQ49"], ["EO47", "FA49"], ["EO49", "EO51"], ["EQ49", "EQ51"], ["EQ49", "EU51"], ["EQ49", "EW51"], ["EQ51", "EQ53"], ["EQ51", "ES53"], ["EU51", "EU53"], ["EW51", "EW53"], ["EW51", "EY53"], ["FE45", "FE47"], ["FE45", "FW47"], ["FE45", "GG47"], ["FE47", "FE49"], ["FE49", "FE51"], ["FE49", "FI51"], ["FE49", "FM51"], ["FE49", "FO51"], ["FE49", "FQ51"], ["FE49", "FS51"], ["FE49", "FU51"], ["FE51", "FE53"], ["FE51", "FG53"], ["FI51", "FI53"], ["FI51", "FK53"], ["FM51", "FM53"], ["FW47", "FW49"], ["FW47", "FY49"], ["FW47", "GC49"], ["FW47", "GE49"], ["FY49", "FY51"], ["FY49", "GA51"], ["GG47", "GG49"], ["GG47", "GQ49"], ["GG47", "HA49"], ["GG47", "HE49"], ["GG47", "HG49"], ["GG47", "HI49"], ["GG47", "HK49"], ["GG49", "GG51"], ["GG49", "GK51"], ["GG49", "GM51"], ["GG49", "GO51"], ["GG51", "GG53"], ["GG51", "GI53"], ["GK51", "GK53"], ["GM51", "GM53"], ["GQ49", "GQ51"], ["GQ49", "GU51"], ["GQ49", "GW51"], ["GQ49", "GY51"], ["GQ51", "GQ53"], ["GQ51", "GS53"], ["GU51", "GU53"], ["HA49", "HA51"], ["HA49", "HC51"], ["K11", "AA13"], ["K11", "AC13"], ["K11", "AE13"], ["K11", "K13"], ["K11", "M13"], ["K11", "O13"], ["K11", "Q13"], ["K11", "S13"], ["K11", "U13"], ["K11", "W13"], ["K11", "Y13"], ["K13", "I15"], ["K13", "K15"], ["K13", "M15"], ["K13", "O15"], ["K15", "K17"], ["K17", "K19"], ["K19", "G21"], ["K19", "I21"], ["K19", "K21"], ["K19", "M21"], ["K19", "O21"], ["K21", "AA23"], ["K21", "AC23"], ["K21", "AE23"], ["K21", "AG23"], ["K21", "AI23"], ["K21", "G23"], ["K21", "I23"], ["K21", "K23"], ["K21", "M23"], ["K21", "O23"], ["K21", "Q23"], ["K21", "S23"], ["K21", "U23"], ["K21", "W23"], ["K21", "Y23"], ["K23", "K25"], ["K23", "M25"], ["K23", "O25"], ["K25", "I27"], ["K25", "K27"], ["K25", "M27"], ["K25", "O27"], ["K25", "Q27"], ["K25", "S27"], ["K25", "U27"], ["K27", "E29"], ["K27", "G29"], ["K27", "I29"], ["K27", "K29"], ["K27", "M29"], ["K27", "O29"], ["K27", "Q29"], ["K27", "S29"], ["K27", "U29"], ["K27", "W29"], ["K27", "Y29"], ["K29", "G31"], ["K29", "I31"], ["K29", "K31"], ["K29", "M31"], ["K29", "O31"], ["K29", "Q31"], ["K29", "S31"], ["K29", "U31"], ["K29", "W31"], ["K29", "Y31"], ["K3", "K5"], ["K3", "M5"], ["K31", "K33"], ["K31", "M33"], ["K33", "K35"], ["K33", "M35"], ["K33", "O35"], ["K35", "K37"], ["K35", "M37"], ["K35", "O37"], ["K35", "Q37"], ["K35", "S37"], ["K37", "K39"], ["K37", "M39"], ["K37", "O39"], ["K39", "K41"], ["K39", "M41"], ["K39", "O41"], ["K39", "Q41"], ["K41", "K43"], ["K41", "M43"], ["K43", "FE45"], ["K43", "K45"], ["K45", "CA47"], ["K45", "CY47"], ["K45", "DU47"], ["K45", "EO47"], ["K45", "FC47"], ["K45", "K47"], ["K47", "AQ49"], ["K47", "BQ49"], ["K47", "K49"], ["K49", "AA51"], ["K49", "AC51"], ["K49", "AG51"], ["K49", "AI51"], ["K49", "AK51"], ["K49", "AM51"], ["K49", "AO51"], ["K49", "K51"], ["K49", "W51"], ["K5", "K7"], ["K5", "M7"], ["K51", "K53"], ["K51", "Q53"], ["K51", "S53"], ["K51", "U53"], ["K53", "K55"], ["K53", "M55"], ["K53", "O55"], ["K7", "K9"], ["K7", "M9"], ["K9", "C11"], ["K9", "E11"], ["K9", "G11"], ["K9", "I11"], ["K9", "K11"], ["K9", "M11"], ["K9", "O11"], ["W51", "W53"], ["W51", "Y53"]], G=[[1, 3], [2, 5], [3, 7], [4, 9], [5, 11], [6, 13], [7, 15], [8, 17], [9, 19], [10, 21], [11, 23], [12, 25], [13, 27], [14, 29], [15, 31], [16, 33], [17, 35], [18, 37], [19, 39], [20, 41], [21, 43], [22, 45], [23, 47], [24, 49], [25, 51], [26, 53], [27, 55]];
+const BW=166, BH=46;
+const by=Object.fromEntries(N.map(n=>[n.id,n]));
+const world=document.getElementById('world'), svg=document.getElementById('svg'), view=document.getElementById('view');
+const maxX=Math.max(...N.map(n=>n.x))+BW+180, maxY=Math.max(...N.map(n=>n.y))+BH+150;
+world.style.width=maxX+'px'; world.style.height=maxY+'px';
+svg.setAttribute('width',maxX); svg.setAttribute('height',maxY);
+
+function line(x1,y1,x2,y2){
+ const e=document.createElementNS('http://www.w3.org/2000/svg','line');
+ e.setAttribute('x1',x1);e.setAttribute('y1',y1);e.setAttribute('x2',x2);e.setAttribute('y2',y2);e.setAttribute('class','line');svg.appendChild(e);
+}
+const ch={};
+R.forEach(([p,c])=>{(ch[p]??=[]).push(c)});
+Object.entries(ch).forEach(([pid,kids])=>{
+ const p=by[pid]; if(!p) return;
+ const cs=kids.map(id=>by[id]).filter(Boolean).sort((a,b)=>a.x-b.x);
+ if(!cs.length)return;
+ const px=p.x+BW/2, py=p.y+BH;
+ const cy=Math.min(...cs.map(c=>c.y));
+ const mid=py+(cy-py)*0.48;
+ function tline(x1,y1,x2,y2, childIds){
+   const e=document.createElementNS('http://www.w3.org/2000/svg','line');
+   e.setAttribute('x1',x1);e.setAttribute('y1',y1);e.setAttribute('x2',x2);e.setAttribute('y2',y2);
+   e.setAttribute('class','line'); e.dataset.parent=pid; e.dataset.children=childIds.join(',');
+   svg.appendChild(e);
+ }
+ tline(px,py,px,mid,cs.map(c=>c.id));
+ if(cs.length>1){
+   const lx=cs[0].x+BW/2, rx=cs[cs.length-1].x+BW/2;
+   tline(lx,mid,rx,mid,cs.map(c=>c.id));
+ }
+ cs.forEach(c=>{
+   const cx=c.x+BW/2;
+   tline(cx,mid,cx,c.y,[c.id]);
+ });
+});
+
+G.forEach(([g,r])=>{
+ const d=document.createElement('div');d.className='gen';d.textContent=g+'대';
+ d.style.top=(90+((r-3)/2)*(70*2)+12)+'px';world.appendChild(d);
+});
+
+N.forEach(n=>{
+ const d=document.createElement('div');d.className='box '+(n.name.includes('(女)')?'f':'');
+ d.dataset.id=n.id;d.textContent=n.name;d.style.left=n.x+'px';d.style.top=n.y+'px';
+ d.addEventListener('click',()=>traceByTouch(n.id));
+ world.appendChild(d);
+});
+
+let scale=1;
+function applyScale(){world.style.transform='scale('+scale+')';world.style.width=(maxX*scale)+'px';world.style.height=(maxY*scale)+'px';}
+function zoomBy(f){scale=Math.max(.12,Math.min(2.5,scale*f));applyScale();}
+function fitAll(){scale=Math.min((view.clientWidth-10)/maxX,(view.clientHeight-10)/maxY);scale=Math.max(.12,scale);applyScale();view.scrollTo(0,0);}
+function findName(){
+ document.querySelectorAll('.hit').forEach(e=>e.classList.remove('hit'));
+ const q=document.getElementById('q').value.trim();if(!q)return;
+ const n=N.find(x=>x.name.includes(q));if(!n)return alert('찾는 이름이 없습니다.');
+ const el=document.querySelector('[data-id="'+n.id+'"]');el.classList.add('hit');
+ const x=n.x*scale-view.clientWidth/2, y=n.y*scale-view.clientHeight/2;
+ view.scrollTo({left:Math.max(0,x),top:Math.max(0,y),behavior:'smooth'});
+}
+
+const parents={};
+R.forEach(([p,c])=>{(parents[c]??=[]).push(p)});
+
+function selectedNode(){
+ const q=document.getElementById('q').value.trim();
+ if(!q){alert('추적할 이름을 입력해 주세요.');return null;}
+ const matches=N.filter(x=>x.name.includes(q));
+ if(!matches.length){alert('찾는 이름이 없습니다.');return null;}
+ if(matches.length>1){
+   // 같은 이름이 여러 명이면 현재 화면에서 가장 가까운 인물을 우선 선택
+   const cx=(view.scrollLeft+view.clientWidth/2)/scale, cy=(view.scrollTop+view.clientHeight/2)/scale;
+   matches.sort((a,b)=>Math.hypot(a.x-cx,a.y-cy)-Math.hypot(b.x-cx,b.y-cy));
+ }
+ return matches[0];
+}
+function collectUp(id,set=new Set()){
+ if(set.has(id))return set; set.add(id);
+ (parents[id]||[]).forEach(p=>collectUp(p,set)); return set;
+}
+function collectDown(id,set=new Set()){
+ if(set.has(id))return set; set.add(id);
+ (ch[id]||[]).forEach(c=>collectDown(c,set)); return set;
+}
+function showTrace(ids){
+ document.querySelectorAll('.box').forEach(e=>{
+   const on=ids.has(e.dataset.id); e.classList.toggle('trace',on);e.classList.toggle('dim',!on);
+ });
+ document.querySelectorAll('svg .line').forEach(e=>{
+   const p=e.dataset.parent, cs=(e.dataset.children||'').split(',').filter(Boolean);
+   const on=p && ids.has(p) && cs.some(c=>ids.has(c));
+   e.classList.toggle('traceLine',on);e.classList.toggle('dim',!on);
+ });
+}
+function focusNode(n){
+ const el=document.querySelector('[data-id="'+n.id+'"]');
+ if(el)el.classList.add('hit');
+ view.scrollTo({left:Math.max(0,n.x*scale-view.clientWidth/2),top:Math.max(0,n.y*scale-view.clientHeight/2),behavior:'smooth'});
+}
+
+function traceByTouch(id){
+ document.querySelectorAll('.traceOverlay').forEach(e=>e.remove());
+ // 이전 선택자의 노란색 표시까지 모두 해제한 뒤 새 계보만 표시
+ clearTrace(true);
+ const ids=collectUp(id);
+ // 모든 인물은 원래 상태로 유지하고 선택한 계보의 박스만 테두리 강조
+ document.querySelectorAll('.box').forEach(e=>{
+   e.classList.remove('dim','trace');
+   if(ids.has(e.dataset.id)) e.classList.add('trace');
+ });
+ // 선택된 사람에서 위 조상으로 이어지는 연결선만 빨간색으로 표시
+ document.querySelectorAll('svg .line').forEach(e=>{
+   e.classList.remove('dim','traceLine');
+   const p=e.dataset.parent;
+   const cs=(e.dataset.children||'').split(',').filter(Boolean);
+   if(!p || !ids.has(p)) return;
+
+   // 직계 계보에 필요한 세로선과 수평선 모두 빨간색으로 표시.
+   // 단, 수평선 전체를 칠하지 않고 부모 중심에서 선택된 직계 자녀의
+   // 분기점까지만 별도의 빨간 선을 덧그린다.
+   if(cs.length===1 && ids.has(cs[0])) e.classList.add('traceLine');
+
+   if(cs.length>1){
+     const x1=Number(e.getAttribute('x1')), x2=Number(e.getAttribute('x2'));
+     const y1=Number(e.getAttribute('y1')), y2=Number(e.getAttribute('y2'));
+     if(Math.abs(x1-x2)<0.1 && cs.some(c=>ids.has(c))) {
+       e.classList.add('traceLine');
+     }
+     if(Math.abs(y1-y2)<0.1){
+       const target=cs.find(c=>ids.has(c));
+       if(target && by[target]){
+         const pnode=by[p], cnode=by[target];
+         const px=pnode.x+BW/2, cx=cnode.x+BW/2;
+         const red=document.createElementNS('http://www.w3.org/2000/svg','line');
+         red.setAttribute('x1',px); red.setAttribute('y1',y1);
+         red.setAttribute('x2',cx); red.setAttribute('y2',y1);
+         red.setAttribute('class','line traceLine traceOverlay');
+         svg.appendChild(red);
+       }
+     }
+   }
+ });
+ // 선택한 본인 박스 강조
+ const el=document.querySelector('[data-id="'+id+'"]');
+ if(el) el.classList.add('hit');
+}
+
+function traceAncestors(){clearTrace(false);const n=selectedNode();if(!n)return;showTrace(collectUp(n.id));focusNode(n);}
+function traceDescendants(){clearTrace(false);const n=selectedNode();if(!n)return;showTrace(collectDown(n.id));focusNode(n);}
+function clearTrace(clearHit=true){
+ document.querySelectorAll('.traceOverlay').forEach(e=>e.remove());
+ document.querySelectorAll('.box').forEach(e=>e.classList.remove('trace','dim'));
+ document.querySelectorAll('svg .line').forEach(e=>e.classList.remove('traceLine','dim'));
+ if(clearHit)document.querySelectorAll('.hit').forEach(e=>e.classList.remove('hit'));
+}
+
+document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')findName()});
+setTimeout(()=>{scale=.55;applyScale(); const target=by['K45']||N[0]; view.scrollTo(target.x*scale-80,target.y*scale-100);},50);
+</script>
+</body></html>
