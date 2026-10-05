@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes">
+<title>묘소 현장 기록</title>
+<style>
+:root{--bg:#f6f4ee;--card:#fff;--ink:#1d1d1f;--muted:#666;--line:#d7d3c9;--accent:#245a3a;--danger:#a23b32}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,'Noto Sans KR',sans-serif}
+header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);padding:14px 16px}
+header h1{font-size:21px;margin:0 0 4px}
+header p{font-size:13px;color:var(--muted);margin:0}
+main{max-width:760px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 1px 4px #0000000d}
+label{display:block;font-weight:700;margin:12px 0 6px}
+input,textarea,button,select{font:inherit}
+input[type=text],input[type=tel],textarea{width:100%;border:1px solid #bbb;border-radius:10px;padding:11px 12px;background:#fff;font-size:17px}
+textarea{min-height:82px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{width:100%;border:0;border-radius:10px;padding:12px 14px;background:var(--accent);color:#fff;font-weight:800;font-size:16px}
+.btn.secondary{background:#fff;color:var(--ink);border:1px solid #aaa}
+.btn.danger{background:var(--danger)}
+.small{font-size:13px;color:var(--muted)}
+.status{padding:9px 10px;background:#f2f6f3;border-radius:9px;margin-top:8px;font-size:14px}
+.photoRow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.photoBox{border:1px dashed #aaa;border-radius:10px;padding:10px;background:#fafafa}
+.photoBox input{width:100%}
+.thumb{display:block;width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin-top:8px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.record{border-top:1px solid var(--line);padding:12px 0}
+.record:first-child{border-top:0}
+.record strong{font-size:17px}
+.record .meta{font-size:13px;color:var(--muted);margin-top:3px}
+.record .rbtns{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.record button{border:1px solid #aaa;background:#fff;border-radius:8px;padding:8px 10px}
+#saveBtn{background:#1f6b3f}
+#gpsBtn{background:#1f5f8f}
+.badge{display:inline-block;background:#eef3ef;border-radius:999px;padding:3px 8px;font-size:12px;margin-left:6px}
+@media(max-width:560px){.grid2,.photoRow,.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>묘소 현장 기록</h1>
+  <p>묘소 사진 · 주소 · GPS 좌표를 현장에서 바로 저장합니다.</p>
+</header>
+<main>
+<section class="card">
+  <label>성명 *</label>
+  <input id="name" type="text" placeholder="예: 심인경">
+
+  <div class="grid2">
+    <div>
+      <label>가계 / 관계</label>
+      <input id="branch" type="text" placeholder="예: 종근 가계">
+    </div>
+    <div>
+      <label>연락 메모</label>
+      <input id="contact" type="text" placeholder="관리인·연락처 등">
+    </div>
+  </div>
+
+  <label>묘소 주소</label>
+  <input id="address" type="text" placeholder="예: 충남 보령시 미산면 ○○리 산 ○○번지">
+
+  <label>GPS 좌표</label>
+  <div class="grid2">
+    <input id="lat" type="text" inputmode="decimal" placeholder="위도">
+    <input id="lon" type="text" inputmode="decimal" placeholder="경도">
+  </div>
+  <button class="btn" id="gpsBtn" type="button" style="margin-top:10px">📍 현재 위치 가져오기</button>
+  <div id="gpsStatus" class="status">GPS를 누르면 현재 위치와 정확도를 저장합니다.</div>
+
+  <label>묘소 사진</label>
+  <div class="photoRow">
+    <div class="photoBox">
+      <b>묘소 전체</b>
+      <input id="photoAll" type="file" accept="image/*" capture="environment">
+      <img id="thumbAll" class="thumb" style="display:none">
+    </div>
+    <div class="photoBox">
+      <b>묘비 정면</b>
+      <input id="photoFront" type="file" accept="image/*" capture="environment">
+      <img id="thumbFront" class="thumb" style="display:none">
+    </div>
+    <div class="photoBox">
+      <b>묘비 후면</b>
+      <input id="photoBack" type="file" accept="image/*" capture="environment">
+      <img id="thumbBack" class="thumb" style="display:none">
+    </div>
+    <div class="photoBox">
+      <b>기타 / 주변</b>
+      <input id="photoEtc" type="file" accept="image/*" capture="environment">
+      <img id="thumbEtc" class="thumb" style="display:none">
+    </div>
+  </div>
+
+  <label>비고</label>
+  <textarea id="memo" placeholder="진입로, 묘역 상태, 비문 내용, 주변 묘소 등"></textarea>
+
+  <div class="actions">
+    <button class="btn" id="saveBtn" type="button">💾 현재 묘소 저장</button>
+    <button class="btn secondary" id="clearBtn" type="button">새 기록</button>
+  </div>
+  <div class="small" style="margin-top:8px">※ 저장 내용은 이 휴대폰 브라우저 안에 보관됩니다. 정기적으로 CSV/백업 파일을 내려받아 두세요.</div>
+</section>
+
+<section class="card">
+  <h2 style="font-size:19px;margin:0 0 8px">저장된 묘소 <span id="count" class="badge">0</span></h2>
+  <div class="actions">
+    <button class="btn secondary" id="csvBtn" type="button">CSV 내보내기</button>
+    <button class="btn secondary" id="backupBtn" type="button">전체 백업(JSON)</button>
+  </div>
+  <div id="records"></div>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+let db, editingId=null;
+const photoIds=['All','Front','Back','Etc'];
+
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open('graveRecordsDB',1);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('records')) d.createObjectStore('records',{keyPath:'id',autoIncrement:true});
+    };
+    req.onsuccess=e=>{db=e.target.result;resolve(db)};
+    req.onerror=e=>reject(e.target.error);
+  });
+}
+
+function readFileAsDataURL(file){
+  return new Promise((resolve,reject)=>{
+    if(!file){resolve(null);return}
+    const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);
+  });
+}
+
+photoIds.forEach(k=>{
+  $('photo'+k).addEventListener('change',e=>{
+    const f=e.target.files[0], img=$('thumb'+k);
+    if(f){img.src=URL.createObjectURL(f);img.style.display='block'} else img.style.display='none';
+  });
+});
+
+$('gpsBtn').onclick=()=>{
+  if(!navigator.geolocation){$('gpsStatus').textContent='이 브라우저는 GPS 기능을 지원하지 않습니다.';return}
+  $('gpsStatus').textContent='현재 위치 확인 중...';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    $('lat').value=pos.coords.latitude.toFixed(6);
+    $('lon').value=pos.coords.longitude.toFixed(6);
+    const a=pos.coords.accuracy?Math.round(pos.coords.accuracy):'';
+    $('gpsStatus').textContent=`위치 저장됨 · 정확도 약 ${a}m · ${new Date().toLocaleString()}`;
+  },err=>{
+    $('gpsStatus').textContent='GPS를 가져오지 못했습니다. 휴대폰 위치 권한과 브라우저 위치 권한을 확인해 주세요.';
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+};
+
+function tx(mode='readonly'){return db.transaction('records',mode).objectStore('records')}
+
+async function saveRecord(){
+  const name=$('name').value.trim();
+  if(!name){alert('성명을 입력해 주세요.');return}
+  const photos={};
+  for(const k of photoIds){
+    const file=$('photo'+k).files[0];
+    if(file) photos[k]=await readFileAsDataURL(file);
+  }
+  let old={photos:{}};
+  if(editingId){
+    old=await new Promise((res,rej)=>{const r=tx().get(editingId);r.onsuccess=()=>res(r.result||old);r.onerror=()=>rej(r.error)});
+  }
+  const rec={
+    id:editingId||undefined,
+    name,
+    branch:$('branch').value.trim(),
+    contact:$('contact').value.trim(),
+    address:$('address').value.trim(),
+    lat:$('lat').value.trim(),
+    lon:$('lon').value.trim(),
+    memo:$('memo').value.trim(),
+    photos:{...old.photos,...photos},
+    savedAt:new Date().toISOString()
+  };
+  const store=tx('readwrite');
+  const req=editingId?store.put(rec):store.add(rec);
+  req.onsuccess=()=>{clearForm();loadRecords();alert('저장했습니다.')};
+  req.onerror=()=>alert('저장 중 오류가 발생했습니다.');
+}
+
+function clearForm(){
+  editingId=null;
+  ['name','branch','contact','address','lat','lon','memo'].forEach(id=>$(id).value='');
+  photoIds.forEach(k=>{$('photo'+k).value='';$('thumb'+k).style.display='none';$('thumb'+k).src=''});
+  $('gpsStatus').textContent='GPS를 누르면 현재 위치와 정확도를 저장합니다.';
+  $('saveBtn').textContent='💾 현재 묘소 저장';
+}
+
+async function allRecords(){
+  return new Promise((res,rej)=>{const r=tx().getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)});
+}
+
+async function loadRecords(){
+  const arr=await allRecords();arr.sort((a,b)=>b.id-a.id);
+  $('count').textContent=arr.length;
+  $('records').innerHTML=arr.map(r=>`
+    <div class="record">
+      <strong>${escapeHtml(r.name)}</strong>
+      <div class="meta">${escapeHtml(r.address||'주소 미입력')}</div>
+      <div class="meta">${r.lat&&r.lon?`GPS ${escapeHtml(r.lat)}, ${escapeHtml(r.lon)}`:'GPS 미입력'}</div>
+      <div class="rbtns">
+        <button onclick="editRec(${r.id})">수정</button>
+        ${r.lat&&r.lon?`<button onclick="openMap('${r.lat}','${r.lon}')">지도 열기</button>`:''}
+        <button onclick="deleteRec(${r.id})">삭제</button>
+      </div>
+    </div>`).join('') || '<div class="small" style="padding:10px 0">아직 저장된 묘소가 없습니다.</div>';
+}
+
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+window.openMap=(lat,lon)=>window.open(`https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lon)}`,'_blank');
+
+window.editRec=async id=>{
+  const r=await new Promise((res,rej)=>{const q=tx().get(id);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
+  if(!r)return;
+  editingId=id;
+  ['name','branch','contact','address','lat','lon','memo'].forEach(k=>$(k).value=r[k]||'');
+  photoIds.forEach(k=>{const img=$('thumb'+k);if(r.photos&&r.photos[k]){img.src=r.photos[k];img.style.display='block'}else img.style.display='none'});
+  $('saveBtn').textContent='💾 수정 내용 저장';
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+window.deleteRec=id=>{
+  if(!confirm('이 묘소 기록을 삭제할까요?'))return;
+  const r=tx('readwrite').delete(id);r.onsuccess=loadRecords;
+};
+
+function dl(name,blob){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$('csvBtn').onclick=async()=>{
+  const arr=await allRecords();
+  const head=['번호','성명','가계/관계','연락메모','묘소주소','위도','경도','비고','저장일시'];
+  const esc=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const csv=[head.map(esc).join(','),...arr.map((r,i)=>[i+1,r.name,r.branch,r.contact,r.address,r.lat,r.lon,r.memo,r.savedAt].map(esc).join(','))].join('\r\n');
+  dl('묘소_현장기록.csv',new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+};
+$('backupBtn').onclick=async()=>{
+  const arr=await allRecords();
+  dl('묘소_현장기록_전체백업.json',new Blob([JSON.stringify(arr,null,2)],{type:'application/json'}));
+};
+$('saveBtn').onclick=saveRecord;
+$('clearBtn').onclick=clearForm;
+
+openDB().then(loadRecords).catch(()=>alert('브라우저 저장소를 열 수 없습니다.'));
+</script>
+</body>
+</html>
