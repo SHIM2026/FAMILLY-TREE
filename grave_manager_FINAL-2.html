@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f7f2">
+<title>묘지 관리</title>
+<style>
+:root{--bg:#f5f5ef;--card:#fff;--text:#222;--muted:#707070;--line:#ddd;--accent:#365f42;--danger:#9b3030}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;background:var(--bg);color:var(--text)}
+header{position:sticky;top:0;z-index:2;background:#fff;border-bottom:1px solid var(--line);padding:14px 16px}
+header h1{margin:0;font-size:21px} header small{color:var(--muted)}
+main{max-width:720px;margin:auto;padding:14px 12px 80px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:12px}
+h2{font-size:18px;margin:0 0 12px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{margin-bottom:12px}
+label{display:block;font-weight:700;font-size:14px;margin-bottom:6px}input,textarea{width:100%;font-size:16px;padding:12px;border:1px solid #bbb;border-radius:10px;background:#fff}
+textarea{min-height:88px;resize:vertical}button,.btn{border:0;border-radius:10px;padding:12px 14px;font-size:16px;font-weight:700;cursor:pointer}
+.primary{background:var(--accent);color:#fff}.secondary{background:#e9eee9;color:#263b2b}.danger{background:#f5e7e7;color:var(--danger)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions>*{flex:1;min-width:130px}
+#preview{display:none;width:100%;max-height:420px;object-fit:contain;border-radius:10px;border:1px solid var(--line);margin-top:10px;background:#eee}
+.status{font-size:14px;color:var(--muted);margin-top:7px}.record{border-top:1px solid var(--line);padding:13px 0}.record:first-child{border-top:0;padding-top:0}
+.record img{width:100%;max-height:250px;object-fit:cover;border-radius:10px;margin:8px 0}.record-title{font-weight:800;font-size:17px}.meta{font-size:14px;color:#555;line-height:1.55;white-space:pre-wrap}
+.empty{text-align:center;color:var(--muted);padding:20px 0}.badge{display:inline-block;font-size:12px;background:#edf1ed;padding:4px 7px;border-radius:20px;margin-left:5px}
+@media(max-width:520px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>묘지 관리</h1><small>사진 · GPS · 주소 · 메모를 휴대폰에 저장</small></header>
+<main>
+<section class="card">
+<h2 id="formTitle">새 묘소 기록</h2>
+<input type="hidden" id="editId">
+<div class="row">
+ <div class="field"><label for="name">성명 / 묘소 이름</label><input id="name" placeholder="예: 심○○ 묘소"></div>
+ <div class="field"><label for="relation">관계 / 비고</label><input id="relation" placeholder="예: 증조부"></div>
+</div>
+<div class="field"><label>현재 위치</label>
+ <div class="actions"><button class="secondary" id="gpsBtn" type="button">📍 현재 위치 가져오기</button><button class="secondary" id="mapBtn" type="button">🗺️ 지도에서 보기</button></div>
+ <div class="row" style="margin-top:8px"><input id="lat" inputmode="decimal" placeholder="위도"><input id="lng" inputmode="decimal" placeholder="경도"></div>
+ <div class="status" id="gpsStatus">위치 버튼을 누르면 GPS 좌표를 저장합니다.</div>
+</div>
+<div class="field"><label for="address">주소</label><input id="address" placeholder="GPS 후 자동 주소 확인 시도 / 직접 입력 가능">
+ <div class="status">주소 자동 확인은 인터넷 연결 및 주소 서비스 상태에 따라 실패할 수 있습니다. GPS 좌표는 별도로 저장됩니다.</div>
+</div>
+<div class="field"><label for="photo">묘소 사진</label>
+ <input id="photo" type="file" accept="image/*" capture="environment">
+ <img id="preview" alt="사진 미리보기">
+ <div class="status" id="photoStatus">카메라로 촬영하거나 갤러리 사진을 선택하세요.</div>
+</div>
+<div class="field"><label for="memo">메모</label><textarea id="memo" placeholder="묘비 내용, 찾아가는 길, 관리 사항 등을 기록하세요."></textarea></div>
+<div class="actions"><button class="primary" id="saveBtn" type="button">💾 묘소 기록 저장</button><button class="secondary" id="cancelBtn" type="button" style="display:none">수정 취소</button></div>
+</section>
+
+<section class="card">
+<h2>저장된 묘소 <span class="badge" id="count">0</span></h2>
+<div class="actions" style="margin-bottom:8px"><button class="secondary" id="exportBtn" type="button">백업 파일 저장</button><label class="btn secondary" style="text-align:center">백업 불러오기<input id="importFile" type="file" accept="application/json" style="display:none"></label></div>
+<div id="records"><div class="empty">아직 저장된 기록이 없습니다.</div></div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let photoData="";
+const DB="graveManagerRecordsV1";
+function getRecords(){try{return JSON.parse(localStorage.getItem(DB)||"[]")}catch(e){return[]}}
+function setRecords(v){localStorage.setItem(DB,JSON.stringify(v))}
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function resetForm(){
+ ["editId","name","relation","lat","lng","address","memo"].forEach(x=>$(x).value="");
+ $("photo").value=""; photoData=""; $("preview").src=""; $("preview").style.display="none";
+ $("formTitle").textContent="새 묘소 기록"; $("saveBtn").textContent="💾 묘소 기록 저장"; $("cancelBtn").style.display="none";
+ $("gpsStatus").textContent="위치 버튼을 누르면 GPS 좌표를 저장합니다."; $("photoStatus").textContent="카메라로 촬영하거나 갤러리 사진을 선택하세요.";
+}
+function render(){
+ const rs=getRecords(); $("count").textContent=rs.length;
+ if(!rs.length){$("records").innerHTML='<div class="empty">아직 저장된 기록이 없습니다.</div>';return}
+ $("records").innerHTML=rs.map(r=>`<article class="record">
+ <div class="record-title">${escapeHtml(r.name||"이름 없는 묘소")}</div>
+ ${r.relation?`<div class="meta">${escapeHtml(r.relation)}</div>`:""}
+ ${r.photo?`<img src="${r.photo}" alt="묘소 사진">`:""}
+ <div class="meta">${r.address?"주소: "+escapeHtml(r.address)+"\n":""}${r.lat&&r.lng?"GPS: "+escapeHtml(r.lat)+", "+escapeHtml(r.lng)+"\n":""}${r.memo?"메모: "+escapeHtml(r.memo)+"\n":""}저장: ${escapeHtml(r.savedAt||"")}</div>
+ <div class="actions" style="margin-top:9px">
+ ${r.lat&&r.lng?`<button class="secondary" onclick="openMap('${r.lat}','${r.lng}')">지도</button>`:""}
+ <button class="secondary" onclick="editRecord('${r.id}')">수정</button>
+ <button class="danger" onclick="deleteRecord('${r.id}')">삭제</button>
+ </div></article>`).join("");
+}
+window.openMap=(lat,lng)=>window.open(`https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`,"_blank");
+$("mapBtn").onclick=()=>{if($("lat").value&&$("lng").value)openMap($("lat").value,$("lng").value);else alert("먼저 GPS 위치를 가져오세요.")};
+$("gpsBtn").onclick=()=>{
+ if(location.protocol!=="https:" && location.hostname!=="localhost"){alert("GPS는 GitHub Pages 같은 https:// 주소에서 실행해야 합니다.");return}
+ if(!navigator.geolocation){$("gpsStatus").textContent="이 브라우저는 GPS 기능을 지원하지 않습니다.";return}
+ $("gpsBtn").disabled=true; $("gpsStatus").textContent="현재 위치를 확인하고 있습니다… 실외에서는 잠시 기다려 주세요.";
+ navigator.geolocation.getCurrentPosition(async p=>{
+   const lat=p.coords.latitude.toFixed(7), lng=p.coords.longitude.toFixed(7);
+   $("lat").value=lat;$("lng").value=lng;$("gpsStatus").textContent=`GPS 저장 준비 완료 (정확도 약 ${Math.round(p.coords.accuracy)}m)`;
+   try{
+     const res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ko`);
+     if(res.ok){const d=await res.json(); if(d.display_name)$("address").value=d.display_name}
+   }catch(e){$("gpsStatus").textContent += " / 주소는 자동 확인하지 못했습니다."}
+   $("gpsBtn").disabled=false;
+ },err=>{
+   const msg={1:"위치 권한이 거부되었습니다. 휴대폰에서 이 사이트의 위치 권한을 허용해 주세요.",2:"현재 위치를 확인할 수 없습니다.",3:"GPS 확인 시간이 초과되었습니다."}[err.code]||"GPS 오류가 발생했습니다.";
+   $("gpsStatus").textContent=msg; $("gpsBtn").disabled=false;
+ },{enableHighAccuracy:true,timeout:30000,maximumAge:10000});
+};
+$("photo").onchange=e=>{
+ const f=e.target.files[0]; if(!f)return;
+ $("photoStatus").textContent="사진을 저장용으로 준비하고 있습니다…";
+ const img=new Image(), reader=new FileReader();
+ reader.onload=ev=>img.src=ev.target.result;
+ img.onload=()=>{
+   const max=1000, scale=Math.min(1,max/Math.max(img.width,img.height));
+   const c=document.createElement("canvas");c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+   c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+   photoData=c.toDataURL("image/jpeg",0.72);
+   $("preview").src=photoData;$("preview").style.display="block";$("photoStatus").textContent="사진 준비 완료. 아래 저장 버튼을 눌러 기록에 저장하세요.";
+ };
+ reader.readAsDataURL(f);
+};
+$("saveBtn").onclick=()=>{
+ const name=$("name").value.trim(); if(!name){alert("성명 또는 묘소 이름을 입력해 주세요.");$("name").focus();return}
+ let rs=getRecords(), id=$("editId").value, old=rs.find(x=>x.id===id);
+ const r={id:id||String(Date.now()),name,relation:$("relation").value.trim(),lat:$("lat").value.trim(),lng:$("lng").value.trim(),address:$("address").value.trim(),memo:$("memo").value.trim(),photo:photoData||(old&&old.photo)||"",savedAt:new Date().toLocaleString("ko-KR")};
+ if(id)rs=rs.map(x=>x.id===id?r:x);else rs.unshift(r);
+ try{setRecords(rs); const verify=getRecords().some(x=>x.id===r.id); if(!verify)throw new Error("verify"); render();resetForm();alert("묘소 기록을 저장했습니다.\n사진과 GPS도 함께 저장됩니다.")}catch(e){alert("저장 공간이 부족합니다. 사진 크기를 더 줄이거나 오래된 기록을 백업한 뒤 정리해 주세요.")}
+};
+window.editRecord=id=>{
+ const r=getRecords().find(x=>x.id===id);if(!r)return;
+ $("editId").value=r.id;$("name").value=r.name||"";$("relation").value=r.relation||"";$("lat").value=r.lat||"";$("lng").value=r.lng||"";$("address").value=r.address||"";$("memo").value=r.memo||"";
+ photoData=r.photo||"";if(photoData){$("preview").src=photoData;$("preview").style.display="block"}else $("preview").style.display="none";
+ $("formTitle").textContent="묘소 기록 수정";$("saveBtn").textContent="💾 수정 내용 저장";$("cancelBtn").style.display="block";window.scrollTo({top:0,behavior:"smooth"});
+};
+window.deleteRecord=id=>{if(confirm("이 묘소 기록을 삭제할까요?")){setRecords(getRecords().filter(x=>x.id!==id));render()}};
+$("cancelBtn").onclick=resetForm;
+$("exportBtn").onclick=()=>{
+ const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),records:getRecords()},null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="묘지관리_백업_"+new Date().toISOString().slice(0,10)+".json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$("importFile").onchange=async e=>{
+ const f=e.target.files[0];if(!f)return;
+ try{const d=JSON.parse(await f.text()), incoming=Array.isArray(d)?d:d.records;if(!Array.isArray(incoming))throw 0;
+ if(confirm(`백업의 ${incoming.length}개 기록으로 현재 기록을 교체할까요?`)){setRecords(incoming);render();resetForm();alert("백업을 불러왔습니다.")}}catch(err){alert("올바른 묘지관리 백업 파일이 아닙니다.")}e.target.value="";
+};
+render();
+</script>
+</body></html>
